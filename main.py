@@ -1,26 +1,27 @@
 import telebot
-from telebot import types
-from flask import Flask, request
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from flask import Flask
 import threading
 
 TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
 bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
 
-# لیست بسته‌های جم (می‌تونی بعداً از دیتابیس یا فایل بخونی)
+# لیست بسته‌های جم
 gem_packages = {
     "86 جم": {"price": "85,000 تومان", "desc": "مناسب برای خریدهای کوچک"},
     "172 جم": {"price": "160,000 تومان", "desc": "محبوب‌ترین بسته"},
     "257 جم": {"price": "230,000 تومان", "desc": "به‌صرفه برای پلیرهای فعال"},
 }
 
-# دستور شروع
+# /start
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("💎 خرید جم Mobile Legends", callback_data="buy_gems"))
     bot.send_message(message.chat.id, "به فروشگاه جم خوش اومدی!\nبرای شروع یکی از گزینه‌ها رو انتخاب کن:", reply_markup=markup)
 
-# هندلر انتخاب "خرید جم"
+# انتخاب بسته
 @bot.callback_query_handler(func=lambda call: call.data == "buy_gems")
 def show_packages(call):
     markup = InlineKeyboardMarkup()
@@ -28,31 +29,27 @@ def show_packages(call):
         markup.add(InlineKeyboardButton(pkg_name, callback_data=f"pkg_{pkg_name}"))
     bot.edit_message_text("📦 یکی از بسته‌های جم رو انتخاب کن:", chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup)
 
-# هندلر انتخاب بسته خاص
+# جزئیات بسته
 @bot.callback_query_handler(func=lambda call: call.data.startswith("pkg_"))
 def show_package_detail(call):
     pkg_name = call.data[4:]
-    pkg = gem_packages[pkg_name]
+    pkg = gem_packages.get(pkg_name, {})
     text = f"🎁 <b>{pkg_name}</b>\n💰 قیمت: {pkg['price']}\nℹ️ {pkg['desc']}"
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("🛒 خرید", callback_data=f"buy_{pkg_name}"))
     bot.edit_message_text(text, chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup, parse_mode="HTML")
-# ======= اجرای ربات با Flask =======
-app = Flask(__name__)
 
-@app.route('/', methods=['GET'])
+# Flask سرور ساده برای زنده نگه‌داشتن برنامه در Render
+@app.route('/')
 def index():
-    return '✅ Bot is alive and running!', 200
+    return "✅ ربات با Polling در حال اجراست!"
 
-@app.route('/', methods=['POST'])
-def webhook():
-    update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
-    bot.process_new_updates([update])
-    return 'ok', 200
+# اجرای Flask در Thread جدا
+def run_flask():
+    app.run(host='0.0.0.0', port=10000)
 
-def run():
-    app.run(host='0.0.0.0', port=8080)
+# شروع Flask
+threading.Thread(target=run_flask).start()
 
-threading.Thread(target=run).start()
-
+# شروع Polling
 bot.infinity_polling()
