@@ -61,47 +61,41 @@ def back_to_menu(message):
 
 @bot.message_handler(func=lambda m: m.text == "🛒 خرید")
 def handle_buy(message):
-    user_state = user_states.get(message.chat.id)
-    if not user_state or 'selected_package' not in user_state:
-        bot.send_message(message.chat.id, "ابتدا یک بسته جم انتخاب کنید.")
-        return
-    
-    user_state['waiting_for_receipt'] = True
     card_number = "6219861818197880"
     caption = (
         "تنها شماره کارت مجموعه موبایل لجندز آی‌آر\n\n"
         f"💳<code>{card_number}</code>💳\n\n"
         "💎 طارق نصاری جزیره 💎\n"
-        "✅ بعد از واریز، عکس رسید + آیدی + آیدی سرور رو همینجا بفرست ✅"
+        "✅ بعد از واریز، عکس رسید + آیدی تلگرام خودتون + آیدی سرور رو همینجا به صورت متن کنار عکس بفرستید."
     )
-    markup = types.InlineKeyboardMarkup()
-    bot.send_message(message.chat.id, caption, parse_mode="HTML", reply_markup=markup)
+    bot.send_message(message.chat.id, caption, parse_mode="HTML")
 
 @bot.message_handler(content_types=['photo'])
-def handle_receipt(message):
-    user_state = user_states.get(message.chat.id, {})
-    if user_state.get('waiting_for_receipt'):
-        user_state['waiting_for_receipt'] = False
-        selected_package = user_state.get('selected_package', 'نامشخص')
-        
-        # پیام تایید به کاربر
-        bot.reply_to(message, "✅ سفارش شما دریافت شد، بزودی شارژ خواهد شد.")
-        
-        # پیام به ادمین با عکس رسید و دکمه انجام شد
-        text_to_admin = (
-            f"📦 سفارش جدید\n"
-            f"👤 کاربر: [{message.from_user.first_name}](tg://user?id={message.chat.id})\n"
-            f"🆔 آیدی کاربر: `{message.chat.id}`\n"
-            f"🎁 بسته: {selected_package}\n"
-            f"💬 برای مشاهده رسید، عکس ارسال شده را ببینید."
-        )
-        markup = types.InlineKeyboardMarkup()
-        callback_data = f"order_done_{message.chat.id}"
-        markup.add(types.InlineKeyboardButton("✅ انجام شد", callback_data=callback_data))
-        
-        bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=text_to_admin, parse_mode="Markdown", reply_markup=markup)
-    else:
-        bot.reply_to(message, "⚠️ لطفاً فقط عکس رسید پرداخت را ارسال کنید.")
+def handle_receipt_photo(message):
+    # بررسی اینکه متن کنار عکس وجود داره یا نه
+    if not message.caption:
+        bot.reply_to(message, "⚠️ لطفا حتما آیدی تلگرام و آیدی سرور خودتون رو در کپشن عکس بفرستید.")
+        return
+    
+    # ساخت متن ارسالی به ادمین
+    user_id = message.chat.id
+    user_name = message.from_user.first_name
+    caption = message.caption
+    
+    text_to_admin = (
+        f"📦 سفارش جدید\n"
+        f"👤 کاربر: [{user_name}](tg://user?id={user_id})\n"
+        f"🆔 آیدی کاربر: `{user_id}`\n"
+        f"💬 آیدی و آیدی سرور:\n{caption}\n\n"
+        f"💬 رسید پرداخت در عکس زیر است."
+    )
+    
+    markup = types.InlineKeyboardMarkup()
+    callback_data = f"order_done_{user_id}"
+    markup.add(types.InlineKeyboardButton("✅ انجام شد", callback_data=callback_data))
+    
+    bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=text_to_admin, parse_mode="Markdown", reply_markup=markup)
+    bot.send_message(user_id, "✅ سفارش شما دریافت شد، بزودی شارژ خواهد شد.")
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("order_done_"))
 def callback_order_done(call):
@@ -112,10 +106,7 @@ def callback_order_done(call):
         bot.answer_callback_query(call.id, "خطا در شناسه کاربر.")
         return
     
-    # پیام انجام سفارش به کاربر
     bot.send_message(user_id, "🎉 سفارش شما انجام شد. از خریدتون ممنونیم!")
-    
-    # حذف دکمه‌ها از پیام ادمین
     bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
     bot.answer_callback_query(call.id, "سفارش به کاربر اطلاع داده شد.")
 
