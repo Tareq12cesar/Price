@@ -1,10 +1,13 @@
 import telebot
 from telebot import types
+from flask import Flask, request
+import threading
 
 TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
 ADMIN_ID = 6618449790
 
 bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
 
 gem_packages = {
     "86 جم": {"price": "85,000 تومان", "desc": "مناسب برای خریدهای کوچک"},
@@ -12,12 +15,22 @@ gem_packages = {
     "257 جم": {"price": "230,000 تومان", "desc": "به‌صرفه برای پلیرهای فعال"},
 }
 
-user_states = {}  # ذخیره وضعیت کاربران
+user_states = {}
 
 def main_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("💎 خرید جم Mobile Legends")
     return markup
+
+@app.route('/', methods=['GET'])
+def index():
+    return '✅ Bot is alive and running!', 200
+
+@app.route('/', methods=['POST'])
+def webhook():
+    update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
+    bot.process_new_updates([update])
+    return 'ok', 200
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -75,7 +88,7 @@ def handle_receipt(message):
         # پیام تایید به کاربر
         bot.reply_to(message, "✅ سفارش شما دریافت شد، بزودی شارژ خواهد شد.")
         
-        # ساخت پیام برای ادمین
+        # پیام به ادمین با عکس رسید و دکمه انجام شد
         text_to_admin = (
             f"📦 سفارش جدید\n"
             f"👤 کاربر: [{message.from_user.first_name}](tg://user?id={message.chat.id})\n"
@@ -83,13 +96,10 @@ def handle_receipt(message):
             f"🎁 بسته: {selected_package}\n"
             f"💬 برای مشاهده رسید، عکس ارسال شده را ببینید."
         )
-        
-        # دکمه انجام شد
         markup = types.InlineKeyboardMarkup()
         callback_data = f"order_done_{message.chat.id}"
         markup.add(types.InlineKeyboardButton("✅ انجام شد", callback_data=callback_data))
         
-        # ارسال پیام و عکس به ادمین
         bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=text_to_admin, parse_mode="Markdown", reply_markup=markup)
     else:
         bot.reply_to(message, "⚠️ لطفاً فقط عکس رسید پرداخت را ارسال کنید.")
@@ -103,13 +113,12 @@ def callback_order_done(call):
         bot.answer_callback_query(call.id, "خطا در شناسه کاربر.")
         return
     
-    # ارسال پیام به کاربر که سفارش انجام شد
+    # پیام انجام سفارش به کاربر
     bot.send_message(user_id, "🎉 سفارش شما انجام شد. از خریدتون ممنونیم!")
     
-    # ویرایش پیام ادمین (حذف دکمه‌ها)
+    # حذف دکمه‌ها از پیام ادمین
     bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
     bot.answer_callback_query(call.id, "سفارش به کاربر اطلاع داده شد.")
-    
 
 @bot.message_handler(func=lambda m: user_states.get(m.chat.id, {}).get('waiting_for_receipt') and m.content_type != 'photo')
 def warn_invalid_receipt(message):
