@@ -36,7 +36,7 @@ def webhook():
 def send_welcome(message):
     bot.send_message(message.chat.id, "به فروشگاه جم خوش اومدی!\nیکی از گزینه‌ها رو انتخاب کن:", reply_markup=main_menu())
 
-@bot.message_handler(func=lambda m: m.text == "💎 خرید جم Mobile Legends")
+@bot.message_handler(func=lambda m: m.text == "💎 خرید جم موبایل لجندز")
 def show_packages(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for pkg_name in gem_packages:
@@ -66,7 +66,7 @@ def handle_buy(message):
         "تنها شماره کارت مجموعه موبایل لجندز آی‌آر\n\n"
         f"💳<code>{card_number}</code>💳\n\n"
         "💎 طارق نصاری جزیره 💎\n"
-        "✅ بعد از واریز، عکس رسید + آیدی تلگرام خودتون + آیدی سرور رو همینجا به صورت متن کنار عکس بفرستید."
+        "✅ بعد از واریز، عکس رسید + آیدی اکانت و آیدی سرور رو همینجا به صورت متن کنار عکس بفرستید."
     )
     bot.send_message(message.chat.id, caption, parse_mode="HTML")
 
@@ -87,7 +87,7 @@ def handle_receipt_photo(message):
         f"👤 کاربر: [{user_name}](tg://user?id={user_id})\n"
         f"🆔 آیدی کاربر: `{user_id}`\n"
         f"💬 آیدی و آیدی سرور:\n{caption}\n\n"
-        f"💬 رسید پرداخت در عکس زیر است."
+        f"💬 رسید پرداخت در عکس است."
     )
     
     markup = types.InlineKeyboardMarkup()
