@@ -104,12 +104,23 @@ def show_packages(message):
 @bot.message_handler(func=lambda m: m.text in gem_packages)
 def show_package_detail(message):
     pkg = gem_packages[message.text]
-    user_states[message.chat.id] = {'selected_package': message.text}
     text = f"🎁 <b>{message.text}</b>\n💰 قیمت: {pkg['price']}\nℹ️ {pkg['desc']}"
+    
+    # دکمه‌ها
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("🛒 خرید")
+    markup.row("🔙 بازگشت به لیست بسته‌ها")
     markup.row("بازگشت به منو")
+
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
+@bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
+def back_to_package_list(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    for pkg_name in gem_packages:
+        markup.row(pkg_name)
+    markup.row("بازگشت به منو")
+    bot.send_message(message.chat.id, "📦 یکی از بسته‌های جم رو انتخاب کن:", reply_markup=markup)
+
 
 @bot.message_handler(func=lambda m: m.text == "بازگشت به منو")
 def back_to_menu(message):
