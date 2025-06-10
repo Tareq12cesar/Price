@@ -35,3 +35,22 @@ def show_package_detail(call):
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("🛒 خرید", callback_data=f"buy_{pkg_name}"))
     bot.edit_message_text(text, chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup, parse_mode="HTML")
+# ======= اجرای ربات با Flask =======
+app = Flask(__name__)
+
+@app.route('/', methods=['GET'])
+def index():
+    return '✅ Bot is alive and running!', 200
+
+@app.route('/', methods=['POST'])
+def webhook():
+    update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
+    bot.process_new_updates([update])
+    return 'ok', 200
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+threading.Thread(target=run).start()
+
+bot.infinity_polling()
