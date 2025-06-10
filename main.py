@@ -75,7 +75,6 @@ def handle_buy(message):
         "✅ بعد از واریز، عکس رسید + آیدی + آیدی سرور رو همینجا بفرست ✅"
     )
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("📋 کپی شماره کارت", switch_inline_query=card_number))
     bot.send_message(message.chat.id, caption, parse_mode="HTML", reply_markup=markup)
 
 @bot.message_handler(content_types=['photo'])
