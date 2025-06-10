@@ -114,13 +114,18 @@ def show_package_detail(message):
 
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
 @bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
+@bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
 def back_to_package_list(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    for pkg_name in gem_packages:
-        markup.row(pkg_name)
+    pkgs = list(gem_packages.keys())
+    # ساختن دکمه‌ها دو تا دو تا کنار هم
+    for i in range(0, len(pkgs), 2):
+        if i+1 < len(pkgs):
+            markup.row(pkgs[i], pkgs[i+1])
+        else:
+            markup.row(pkgs[i])
     markup.row("بازگشت به منو")
     bot.send_message(message.chat.id, "📦 یکی از بسته‌های جم رو انتخاب کن:", reply_markup=markup)
-
 
 @bot.message_handler(func=lambda m: m.text == "بازگشت به منو")
 def back_to_menu(message):
