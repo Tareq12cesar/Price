@@ -3,7 +3,7 @@ from telebot import types
 from flask import Flask, request
 import threading
 
-TOKEN = '7933020801:AAHQWz8SWbuKDgqQDfNsnHNTxOf65Bo32JM'
+TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
 bot = telebot.TeleBot(TOKEN)
 
 # لیست بسته‌های جم (می‌تونی بعداً از دیتابیس یا فایل بخونی)
