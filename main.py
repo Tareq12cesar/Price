@@ -93,7 +93,7 @@ def webhook():
 def send_welcome(message):
     bot.send_message(message.chat.id, "به فروشگاه جم خوش اومدی!\nیکی از گزینه‌ها رو انتخاب کن:", reply_markup=main_menu())
 
-@bot.message_handler(func=lambda m: m.text == "💎 خرید جم Mobile Legends")
+@bot.message_handler(func=lambda m: m.text == "💎 خرید جم موبایل لجندز")
 def show_packages(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     pkgs = list(gem_packages.keys())
