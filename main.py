@@ -19,7 +19,7 @@ user_states = {}
 
 def main_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row("💎 خرید جم Mobile Legends")
+    markup.row("💎 خرید جم موبایل لجندز")
     return markup
 
 @app.route('/', methods=['GET'])
