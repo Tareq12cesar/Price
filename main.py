@@ -59,16 +59,24 @@ def handle_buy(message):
 def fallback(message):
     bot.send_message(message.chat.id, "لطفاً از گزینه‌های موجود استفاده کن.", reply_markup=main_menu())
 
-# Flask برای زنده نگه‌داشتن
-@app.route('/')
+from flask import Flask, request
+import threading
+
+app = Flask(__name__)
+
+@app.route('/', methods=['GET'])
 def index():
-    return "✅ ربات در حال اجراست!"
+    return '✅ Bot is alive and running!', 200
 
-def run_flask():
-    app.run(host='0.0.0.0', port=10000)
+@app.route('/', methods=['POST'])
+def webhook():
+    update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
+    bot.process_new_updates([update])
+    return 'ok', 200
 
-# اجرای Flask در Thread
-threading.Thread(target=run_flask).start()
+def run():
+    app.run(host='0.0.0.0', port=8080)
 
-# اجرای Polling
+threading.Thread(target=run).start()
+
 bot.infinity_polling()
