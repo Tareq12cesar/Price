@@ -54,7 +54,7 @@ admin_msg = (
     f"📱 شماره: `{phone}`"
 )
 bot.send_message(ADMIN_ID, admin_msg, parse_mode="Markdown")
-    conn = sqlite3.connect('users.db')
+conn = sqlite3.connect('users.db')
     c = conn.cursor()
     c.execute('''
         INSERT INTO users (user_id, phone) VALUES (?, ?)
