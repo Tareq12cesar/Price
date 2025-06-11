@@ -2,7 +2,17 @@ import telebot
 from telebot import types
 from flask import Flask, request
 import threading
+import sqlite3  # اضافه کن اینجا
 
+# اینجا توابع دیتابیس رو اضافه کن:
+def init_db():
+    ...
+
+def add_or_update_user(user_id, phone):
+    ...
+
+def get_user_phone(user_id):
+    ...
 TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
 ADMIN_ID = 6618449790
 
@@ -284,4 +294,6 @@ def run():
 
 threading.Thread(target=run).start()
 
+if __name__ == '__main__':
+    init_db()    
 bot.infinity_polling()
