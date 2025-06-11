@@ -244,6 +244,14 @@ def back_to_menu(message):
 
 @bot.message_handler(func=lambda m: m.text == "🛒 خرید")
 def handle_buy(message):
+    bot.send_message(message.chat.id, "📱 لطفاً شماره تماس خود را برای تکمیل سفارش و دریافت پاداش وارد کنید.")
+    bot.register_next_step_handler(message, process_phone_number)
+
+def process_phone_number(message):
+    phone = message.text
+    user_id = message.chat.id
+    add_or_update_user(user_id, phone)  # ذخیره شماره تلفن در دیتابیس
+
     card_number = "6219861818197880"
     caption = (
         "تنها شماره کارت مجموعه موبایل لجندز آی‌آر\n\n"
@@ -251,7 +259,7 @@ def handle_buy(message):
         "💎 طارق نصاری جزیره 💎\n"
         "✅ بعد از واریز، عکس رسید + آیدی اکانت و آیدی سرور رو همینجا به صورت متن کنار عکس بفرستید."
     )
-    bot.send_message(message.chat.id, caption, parse_mode="HTML")
+    bot.send_message(user_id, caption, parse_mode="HTML")
 
 @bot.message_handler(content_types=['photo'])
 def handle_receipt_photo(message):
