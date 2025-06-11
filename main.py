@@ -324,9 +324,10 @@ def handle_contact(message):
         )
         bot.send_message(user_id, caption, parse_mode="HTML", reply_markup=main_menu())
 
-        user_states.pop(user_id)
-        
-        user_states.pop(user_id)  # حذف وضعیت انتظار
+    selected_package = user_states.get(user_id, {}).get("selected_package")
+user_states.pop(user_id, None)
+if selected_package:
+    user_states[user_id] = {"selected_package": selected_package}
 
 @bot.message_handler(content_types=['photo'])
 def handle_receipt_photo(message):
