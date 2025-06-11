@@ -110,6 +110,27 @@ gem_packages = {
     },
 }
 
+def format_package_text(package_key):
+    # ابتدا چک کن بسته تو دیکشنری‌های اصلی هست
+    if package_key in gem_packages:
+        pkg = gem_packages[package_key]
+    elif package_key in special_event_packages:
+        pkg = special_event_packages[package_key]
+    else:
+        return "بسته یافت نشد."
+
+    if package_key.isdigit():
+        gem_label = f"{package_key}جم"
+    else:
+        gem_label = package_key
+
+    text = (
+        f"💎 {gem_label}\n"
+        f"💰 قیمت: {pkg['price']}\n"
+        f"ℹ️ {pkg['desc']}\n"
+        f"🎁 پاداش خرید: {pkg['پاداش']:,} تومان"
+    )
+    return text
 
 user_states = {}
 user_profiles = {}
@@ -160,8 +181,8 @@ def show_package_detail(message):
     else:
         pkg = special_event_packages[message.text]
 
-    text = f"🎁 <b>{message.text}</b>\n💰 قیمت: {pkg['price']}\nℹ️ {pkg['desc']}"
-
+    text = format_package_text(message.text)
+    
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("🛒 خرید")
     markup.row("🔙 بازگشت به لیست بسته‌ها")
