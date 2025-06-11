@@ -4,14 +4,16 @@ from flask import Flask, request
 import threading
 import sqlite3  # اضافه کن اینجا
 
-# توابع دیتابیس
+# دیتابیس
 def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
-            phone TEXT
+            phone TEXT,
+            balance INTEGER DEFAULT 0,
+            purchase_count INTEGER DEFAULT 0
         )
     ''')
     conn.commit()
@@ -27,15 +29,32 @@ def add_or_update_user(user_id, phone):
     conn.commit()
     conn.close()
 
-def get_user_phone(user_id):
+def increase_user_reward(user_id, amount):
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
-    c.execute('SELECT phone FROM users WHERE user_id=?', (user_id,))
+    # اگر کاربر وجود ندارد خطا نمی‌دهد، فقط افزایش می‌دهد
+    c.execute('''
+        UPDATE users
+        SET balance = balance + ?, purchase_count = purchase_count + 1
+        WHERE user_id = ?
+    ''', (amount, user_id))
+    conn.commit()
+    conn.close()
+
+def get_user_profile(user_id):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('SELECT phone, balance, purchase_count FROM users WHERE user_id=?', (user_id,))
     row = c.fetchone()
     conn.close()
     if row:
-        return row[0]
-    return None
+        return {
+            'phone': row[0],
+            'balance': row[1],
+            'purchase_count': row[2]
+        }
+    else:
+        return None
 
 TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
 ADMIN_ID = 6618449790
