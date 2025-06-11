@@ -151,10 +151,11 @@ def show_package_detail(message):
 @bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
 def back_to_package_list(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    pkgs = list(special_event_packages.keys()) + list(gem_packages.keys())
+    markup.row("🔥 بسته‌های ویژه ایونت")  # دکمه مخصوص رو باز برگردونیم
+    pkgs = list(gem_packages.keys())
     for i in range(0, len(pkgs), 2):
-        if i+1 < len(pkgs):
-            markup.row(pkgs[i], pkgs[i+1])
+        if i + 1 < len(pkgs):
+            markup.row(pkgs[i], pkgs[i + 1])
         else:
             markup.row(pkgs[i])
     markup.row("بازگشت به منو")
