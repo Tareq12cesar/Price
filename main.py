@@ -243,11 +243,14 @@ def show_package_detail(message):
         pkg = special_event_packages[message.text]
 
     text = format_package_text(message.text)
-    
+
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("🛒 خرید")
     markup.row("🔙 بازگشت به لیست بسته‌ها")
     markup.row("بازگشت به منو")
+
+    # ذخیره بسته انتخاب شده برای استفاده بعدی
+    user_states[message.chat.id] = {'selected_package': message.text}
 
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
 
@@ -288,14 +291,20 @@ def handle_buy(message):
     button_phone = types.KeyboardButton(text="ارسال شماره تماس 📱", request_contact=True)
     markup.add(button_phone)
     bot.send_message(message.chat.id, "لطفاً شماره تماس خود را برای تکمیل سفارش و دریافت پاداش ارسال کنید", reply_markup=markup)
-    user_states[message.chat.id] = {'waiting_for_phone': True}
+
+    # فقط وضعیت انتظار را اضافه کن، بدون پاک کردن `selected_package`
+    if message.chat.id in user_states:
+        user_states[message.chat.id]['waiting_for_phone'] = True
+    else:
+        user_states[message.chat.id] = {'waiting_for_phone': True}
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     if message.contact is not None and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
         phone = message.contact.phone_number
         user_id = message.chat.id
         add_or_update_user(user_id, phone)  # ذخیره شماره تو دیتابیس
-
+# اطلاع به ادمین
+bot.send_message(ADMIN_ID, f"📞 شماره تماس جدید از {message.from_user.first_name}:\n`{phone}`", parse_mode="Markdown")
         # بعد از ذخیره شماره، شماره کارت رو ارسال کن
         card_number = "6219861818197880"
         caption = (
@@ -341,13 +350,29 @@ def callback_order_done(call):
     try:
         user_id = int(user_id_str)
     except:
-        bot.answer_callback_query(call.id, "خطا در شناسه کاربر.")
+        bot.answer_callback_query(call.id, "❌ خطا در شناسه کاربر.")
         return
-    
-    bot.send_message(user_id, "🎉 سفارش شما انجام شد. از خریدتون ممنونیم!")
+
+    # گرفتن بسته انتخابی از user_states
+    selected = user_states.get(user_id, {}).get("selected_package")
+    if selected in gem_packages:
+        reward = gem_packages[selected]["پاداش"]
+    elif selected in special_event_packages:
+        reward = special_event_packages[selected]["پاداش"]
+    else:
+        reward = 0
+
+    # افزودن پاداش به حساب کاربر
+    if reward > 0:
+        increase_user_reward(user_id, reward)
+
+    # پیام به کاربر
+    reward_text = f"\n💰 پاداش {reward:,} تومان به حساب شما افزوده شد." if reward else ""
+    bot.send_message(user_id, f"🎉 سفارش شما انجام شد. از خریدتون ممنونیم!{reward_text}")
+
+    # حذف دکمه
     bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
     bot.answer_callback_query(call.id, "سفارش به کاربر اطلاع داده شد.")
-
 @bot.message_handler(func=lambda m: user_states.get(m.chat.id, {}).get('waiting_for_receipt') and m.content_type != 'photo')
 def warn_invalid_receipt(message):
     bot.reply_to(message, "⚠️ لطفاً فقط عکس رسید پرداخت را ارسال کنید.")
