@@ -244,28 +244,35 @@ def back_to_menu(message):
 
 @bot.message_handler(func=lambda m: m.text == "🛒 خرید")
 def handle_buy(message):
-    bot.send_message(message.chat.id, "📱 لطفاً شماره تماس خود را برای تکمیل سفارش و دریافت پاداش وارد کنید.")
-    bot.register_next_step_handler(message, process_phone_number)
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    button_phone = types.KeyboardButton(text="ارسال شماره تماس 📱", request_contact=True)
+    markup.add(button_phone)
+    bot.send_message(message.chat.id, "لطفاً شماره تماس خود را برای تکمیل سفارش و دریافت پاداش وارد کنید.", reply_markup=markup)
+    user_states[message.chat.id] = {'waiting_for_phone': True}
+@bot.message_handler(content_types=['contact'])
+def handle_contact(message):
+    if message.contact is not None and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
+        phone = message.contact.phone_number
+        user_id = message.chat.id
+        add_or_update_user(user_id, phone)  # ذخیره شماره تو دیتابیس
 
-def process_phone_number(message):
-    phone = message.text
-    user_id = message.chat.id
-    add_or_update_user(user_id, phone)  # ذخیره شماره تلفن در دیتابیس
-
-    card_number = "6219861818197880"
-    caption = (
-        "تنها شماره کارت مجموعه موبایل لجندز آی‌آر\n\n"
-        f"💳<code>{card_number}</code>💳\n\n"
-        "💎 طارق نصاری جزیره 💎\n"
-        "✅ بعد از واریز، عکس رسید + آیدی اکانت و آیدی سرور رو همینجا به صورت متن کنار عکس بفرستید."
-    )
-    bot.send_message(user_id, caption, parse_mode="HTML")
+        # بعد از ذخیره شماره، شماره کارت رو ارسال کن
+        card_number = "6219861818197880"
+        caption = (
+            "تنها شماره کارت مجموعه موبایل لجندز آی‌آر\n\n"
+            f"💳<code>{card_number}</code>💳\n\n"
+            "💎 طارق نصاری جزیره 💎\n"
+            "✅ بعد از واریز، عکس رسید + آیدی اکانت و آیدی سرور رو همینجا به صورت متن کنار عکس بفرستید."
+        )
+        bot.send_message(user_id, caption, parse_mode="HTML", reply_markup=main_menu())
+        
+        user_states.pop(user_id)  # حذف وضعیت انتظار
 
 @bot.message_handler(content_types=['photo'])
 def handle_receipt_photo(message):
     # بررسی اینکه متن کنار عکس وجود داره یا نه
     if not message.caption:
-        bot.reply_to(message, "⚠️ لطفا حتما آیدی تلگرام و آیدی سرور خودتون رو در کپشن عکس بفرستید.")
+        bot.reply_to(message, "⚠️ لطفا آیدی و آیدی سرور خودتون رو در کپشن عکس بفرستید.")
         return
     
     # ساخت متن ارسالی به ادمین
