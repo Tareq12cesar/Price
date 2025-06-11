@@ -2,7 +2,6 @@ import telebot
 from telebot import types
 from flask import Flask, request
 import threading
-import sqlite3  # اضافه کن اینجا
 
 
 from pymongo.mongo_client import MongoClient
@@ -42,54 +41,6 @@ def show_balance(message):
     balance = get_balance(user_id)
     bot.send_message(user_id, f"موجودی شما: {balance} تومان")
     
-# توابع دیتابیس
-def init_db():
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            phone TEXT,
-            balance INTEGER DEFAULT 0,
-            purchase_count INTEGER DEFAULT 0
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-def increase_user_reward(user_id, amount):
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    c.execute('''
-        UPDATE users
-        SET balance = balance + ?, purchase_count = purchase_count + 1
-        WHERE user_id = ?
-    ''', (amount, user_id))
-    conn.commit()
-    conn.close()
-def add_or_update_user(user_id, phone):
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    c.execute('''
-        INSERT INTO users (user_id, phone) VALUES (?, ?)
-        ON CONFLICT(user_id) DO UPDATE SET phone=excluded.phone
-    ''', (user_id, phone))
-    conn.commit()
-    conn.close()
-
-def get_user_profile(user_id):
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    c.execute('SELECT phone, balance, purchase_count FROM users WHERE user_id=?', (user_id,))
-    row = c.fetchone()
-    conn.close()
-    if row:
-        return {
-            'phone': row[0],
-            'balance': row[1],
-            'purchase_count': row[2]
-        }
-    return None
 
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
