@@ -314,16 +314,32 @@ def show_profile(message):
 
 @bot.message_handler(func=lambda m: m.text == "🛒 خرید")
 def handle_buy(message):
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    button_phone = types.KeyboardButton(text="ارسال شماره تماس 📱", request_contact=True)
-    markup.add(button_phone)
-    bot.send_message(message.chat.id, "لطفاً شماره تماس خود را برای تکمیل سفارش و دریافت پاداش ارسال کنید", reply_markup=markup)
+    user_id = message.chat.id
+    phone = get_user_phone(user_id)
 
-    # فقط وضعیت انتظار را اضافه کن، بدون پاک کردن `selected_package`
-    if message.chat.id in user_states:
-        user_states[message.chat.id]['waiting_for_phone'] = True
+    if phone:
+        # شماره از قبل ثبت شده ➤ مستقیم ادامه سفارش
+        card_number = "6219861818197880"
+        caption = (
+            "شماره شما قبلاً ثبت شده ✅\n\n"
+            f"💳<code>{card_number}</code>💳\n\n"
+            "💎 طارق نصاری جزیره 💎\n"
+            "✅ بعد از واریز، عکس رسید + آیدی اکانت و آیدی سرور رو همینجا به صورت متن کنار عکس بفرستید."
+        )
+        bot.send_message(user_id, caption, parse_mode="HTML", reply_markup=main_menu())
+
     else:
-        user_states[message.chat.id] = {'waiting_for_phone': True}
+        # شماره موجود نیست ➤ درخواست شماره
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        button_phone = types.KeyboardButton(text="ارسال شماره تماس 📱", request_contact=True)
+        markup.add(button_phone)
+        bot.send_message(user_id, "لطفاً شماره تماس خود را برای تکمیل سفارش و دریافت پاداش ارسال کنید", reply_markup=markup)
+
+        # ذخیره وضعیت انتظار برای شماره
+        if user_id in user_states:
+            user_states[user_id]['waiting_for_phone'] = True
+        else:
+            user_states[user_id] = {'waiting_for_phone': True}
         
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
