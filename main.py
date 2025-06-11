@@ -2,18 +2,16 @@ import telebot
 from telebot import types
 from flask import Flask, request
 import threading
-import sqlite3
+import sqlite3  # اضافه کن اینجا
 
-# دیتابیس
+# توابع دیتابیس
 def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
-            phone TEXT,
-            balance INTEGER DEFAULT 0,
-            purchase_count INTEGER DEFAULT 0
+            phone TEXT
         )
     ''')
     conn.commit()
@@ -29,41 +27,22 @@ def add_or_update_user(user_id, phone):
     conn.commit()
     conn.close()
 
-def increase_user_reward(user_id, amount):
+def get_user_phone(user_id):
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
-    # اگر کاربر وجود ندارد خطا نمی‌دهد، فقط افزایش می‌دهد
-    c.execute('''
-        UPDATE users
-        SET balance = balance + ?, purchase_count = purchase_count + 1
-        WHERE user_id = ?
-    ''', (amount, user_id))
-    conn.commit()
-    conn.close()
-
-def get_user_profile(user_id):
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    c.execute('SELECT phone, balance, purchase_count FROM users WHERE user_id=?', (user_id,))
+    c.execute('SELECT phone FROM users WHERE user_id=?', (user_id,))
     row = c.fetchone()
     conn.close()
     if row:
-        return {
-            'phone': row[0],
-            'balance': row[1],
-            'purchase_count': row[2]
-        }
-    else:
-        return None
-
-# --- ادامه کد اصلی ---
+        return row[0]
+    return None
 
 TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
 ADMIN_ID = 6618449790
+
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-# بسته‌ها و پاداش‌ها (مثل قبل)
 special_event_packages = {
     "پک هفتگی": {
         "price": "120,000 تومان",
@@ -186,35 +165,82 @@ def format_package_text(package_key):
         f"🎁 پاداش خرید: {pkg['پاداش']:,} تومان"
     )
     return text
-# ... (کد پکیج‌ها همانند ارسال شما)
 
-# States
 user_states = {}
+user_profiles = {}
 
 def main_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row("💎 خرید جم موبایل لجندز", "👤 حساب کاربری")
+    markup.row("💎 خرید جم موبایل لجندز", "👤 حساب کاربری")  # دکمه‌ها در یک ردیف
     return markup
+
+@app.route('/', methods=['GET'])
+def index():
+    return '✅ Bot is alive and running!', 200
+
+@app.route('/', methods=['POST'])
+def webhook():
+    update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
+    bot.process_new_updates([update])
+    return 'ok', 200
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.send_message(message.chat.id, "به فروشگاه جم خوش اومدی!\nیکی از گزینه‌ها رو انتخاب کن:", reply_markup=main_menu())
 
-@bot.message_handler(func=lambda m: m.text == "👤 حساب کاربری")
-def show_profile(message):
-    profile = get_user_profile(message.chat.id)
-    if profile:
-        text = (
-            f"👤 پروفایل شما:\n"
-            f"📞 شماره تماس: {profile['phone'] or 'ثبت نشده'}\n"
-            f"💰 موجودی پاداش: {profile['balance']:,} تومان\n"
-            f"🛒 تعداد خرید‌ها: {profile['purchase_count']}"
-        )
-    else:
-        text = "شما هنوز هیچ اطلاعاتی ثبت نکرده‌اید."
-    bot.send_message(message.chat.id, text, reply_markup=main_menu())
+@bot.message_handler(func=lambda m: m.text == "💎 خرید جم موبایل لجندز")
+def show_packages(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row("🔥 بسته‌های ویژه ایونت")  # دکمه بسته ویژه
+    pkgs = list(gem_packages.keys())
+    for i in range(0, len(pkgs), 2):
+        if i + 1 < len(pkgs):
+            markup.row(pkgs[i], pkgs[i + 1])
+        else:
+            markup.row(pkgs[i])
+    markup.row("بازگشت به منو")
+    bot.send_message(message.chat.id, "📦 یکی از بسته‌های جم رو انتخاب کن:", reply_markup=markup)
+@bot.message_handler(func=lambda m: m.text == "🔥 بسته‌های ویژه ایونت")
+def show_special_event_packages(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    for key in special_event_packages.keys():
+        markup.row(key)
+    markup.row("🔙 بازگشت به لیست بسته‌ها")
+    bot.send_message(message.chat.id, "🔥 بسته‌های ویژه ایونت:", reply_markup=markup)
 
-# --- کد خرید و ثبت شماره تماس ---
+@bot.message_handler(func=lambda m: m.text in gem_packages or m.text in special_event_packages)
+def show_package_detail(message):
+    if message.text in gem_packages:
+        pkg = gem_packages[message.text]
+    else:
+        pkg = special_event_packages[message.text]
+
+    text = format_package_text(message.text)
+    
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row("🛒 خرید")
+    markup.row("🔙 بازگشت به لیست بسته‌ها")
+    markup.row("بازگشت به منو")
+
+    bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
+def back_to_package_list(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row("🔥 بسته‌های ویژه ایونت")  # دکمه مخصوص رو باز برگردونیم
+    pkgs = list(gem_packages.keys())
+    for i in range(0, len(pkgs), 2):
+        if i + 1 < len(pkgs):
+            markup.row(pkgs[i], pkgs[i + 1])
+        else:
+            markup.row(pkgs[i])
+    markup.row("بازگشت به منو")
+    bot.send_message(message.chat.id, "📦 یکی از بسته‌های جم رو انتخاب کن:", reply_markup=markup)
+
+@bot.message_handler(func=lambda m: m.text == "بازگشت به منو")
+def back_to_menu(message):
+    user_states.pop(message.chat.id, None)
+    bot.send_message(message.chat.id, "بازگشت به منوی اصلی:", reply_markup=main_menu())
 
 @bot.message_handler(func=lambda m: m.text == "🛒 خرید")
 def handle_buy(message):
@@ -223,14 +249,14 @@ def handle_buy(message):
     markup.add(button_phone)
     bot.send_message(message.chat.id, "لطفاً شماره تماس خود را برای تکمیل سفارش و دریافت پاداش ارسال کنید", reply_markup=markup)
     user_states[message.chat.id] = {'waiting_for_phone': True}
-
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
-    if message.contact and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
+    if message.contact is not None and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
         phone = message.contact.phone_number
         user_id = message.chat.id
-        add_or_update_user(user_id, phone)
+        add_or_update_user(user_id, phone)  # ذخیره شماره تو دیتابیس
 
+        # بعد از ذخیره شماره، شماره کارت رو ارسال کن
         card_number = "6219861818197880"
         caption = (
             "تنها شماره کارت مجموعه موبایل لجندز آی‌آر\n\n"
@@ -239,14 +265,17 @@ def handle_contact(message):
             "✅ بعد از واریز، عکس رسید + آیدی اکانت و آیدی سرور رو همینجا به صورت متن کنار عکس بفرستید."
         )
         bot.send_message(user_id, caption, parse_mode="HTML", reply_markup=main_menu())
-        user_states.pop(user_id)
+        
+        user_states.pop(user_id)  # حذف وضعیت انتظار
 
 @bot.message_handler(content_types=['photo'])
 def handle_receipt_photo(message):
+    # بررسی اینکه متن کنار عکس وجود داره یا نه
     if not message.caption:
         bot.reply_to(message, "⚠️ لطفا آیدی و آیدی سرور خودتون رو در کپشن عکس بفرستید.")
         return
     
+    # ساخت متن ارسالی به ادمین
     user_id = message.chat.id
     user_name = message.from_user.first_name
     caption = message.caption
@@ -275,23 +304,19 @@ def callback_order_done(call):
         bot.answer_callback_query(call.id, "خطا در شناسه کاربر.")
         return
     
-    # افزدون پاداش به کاربر هنگام تایید سفارش توسط ادمین
-    # برای این کار باید مبلغ پاداش رو از جایی داشته باشیم.
-    # یک راه ساده: ارسال مقدار پاداش همراه callback است یا ذخیره‌سازی موقت.
-    # چون در کد فعلی مبلغ پاداش مشخص نیست، فرض میکنیم که پاداش روی 3000 تومان ثابت است.
-    # ولی بهتر است مبلغ واقعی بسته ذخیره یا ارسال شود.
-
-    # برای مثال ما فرض میکنیم پاداش 3000 است:
-    reward_amount = 3000  # می‌توانید این مقدار را با مقدار واقعی پاداش جایگزین کنید
-
-    increase_user_reward(user_id, reward_amount)
-
-    bot.send_message(user_id, "🎉 سفارش شما انجام شد. از خریدتون ممنونیم!\n"
-                              f"💰 پاداش شما {reward_amount:,} تومان به حساب شما افزوده شد.")
+    bot.send_message(user_id, "🎉 سفارش شما انجام شد. از خریدتون ممنونیم!")
     bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
     bot.answer_callback_query(call.id, "سفارش به کاربر اطلاع داده شد.")
 
-# --- ادامه سایر هندلر‌ها ---
+@bot.message_handler(func=lambda m: user_states.get(m.chat.id, {}).get('waiting_for_receipt') and m.content_type != 'photo')
+def warn_invalid_receipt(message):
+    bot.reply_to(message, "⚠️ لطفاً فقط عکس رسید پرداخت را ارسال کنید.")
+
+@bot.message_handler(func=lambda m: True)
+def fallback(message):
+    bot.send_message(message.chat.id, "لطفاً از گزینه‌های موجود استفاده کن.", reply_markup=main_menu())
+
+app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def index():
@@ -309,5 +334,5 @@ def run():
 threading.Thread(target=run).start()
 
 if __name__ == '__main__':
-    init_db()
-    bot.infinity_polling()
+    init_db()    
+bot.infinity_polling()
