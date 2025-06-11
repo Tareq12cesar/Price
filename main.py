@@ -1,4 +1,3 @@
-فایل نهایی کامل‌شده: ربات خرید جم با ذخیره شماره و پاداش و پروفایل
 
 import telebot from telebot import types from flask import Flask, request import threading import sqlite3
 
