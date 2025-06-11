@@ -1,3 +1,35 @@
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+
+password = "Tareq13731376"
+uri = f"mongodb+srv://TareqGemBot:{password}@gemcluster.cjw8jid.mongodb.net/?retryWrites=true&w=majority&appName=Gemcluster"
+client = MongoClient(uri, server_api=ServerApi('1'))
+
+try:
+    client.admin.command('ping')
+    print("اتصال به MongoDB موفق بود!")
+except Exception as e:
+    print(f"خطا در اتصال به MongoDB: {e}")
+
+db = client["GemMlbb"]  # نام دیتابیسی که تو Atlas ساختی
+users_collection = db["users"]  # کالکشنی که میخوای اطلاعات کاربران رو ذخیره کنی
+def add_balance(user_id, amount):
+    users_collection.update_one(
+        {"user_id": user_id},
+        {"$inc": {"balance": amount}},
+        upsert=True
+    )
+def get_balance(user_id):
+    user = users_collection.find_one({"user_id": user_id})
+    if user and "balance" in user:
+        return user["balance"]
+    return 0
+@bot.message_handler(commands=['balance'])
+def show_balance(message):
+    user_id = message.chat.id
+    balance = get_balance(user_id)
+    bot.send_message(user_id, f"موجودی شما: {balance} تومان")
+    
 import telebot
 from telebot import types
 from flask import Flask, request
