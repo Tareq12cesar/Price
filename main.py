@@ -149,8 +149,6 @@ def show_package_detail(message):
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
-@bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
-@bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
 def back_to_package_list(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     pkgs = list(special_event_packages.keys()) + list(gem_packages.keys())
