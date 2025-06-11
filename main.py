@@ -247,7 +247,7 @@ def handle_buy(message):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     button_phone = types.KeyboardButton(text="ارسال شماره تماس 📱", request_contact=True)
     markup.add(button_phone)
-    bot.send_message(message.chat.id, "لطفاً شماره تماس خود را برای تکمیل سفارش و دریافت پاداش وارد کنید.", reply_markup=markup)
+    bot.send_message(message.chat.id, "لطفاً شماره تماس خود را برای تکمیل سفارش و دریافت پاداش ارسال کنید", reply_markup=markup)
     user_states[message.chat.id] = {'waiting_for_phone': True}
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
