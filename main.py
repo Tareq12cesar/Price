@@ -2,98 +2,44 @@ import telebot
 from telebot import types
 from flask import Flask, request
 import threading
-
-
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-password = "Tareq13731376"
-uri = f"mongodb+srv://TareqGemBot:{password}@gemcluster.cjw8jid.mongodb.net/?retryWrites=true&w=majority&appName=Gemcluster"
-client = MongoClient(uri, server_api=ServerApi('1'))
-
+# توکن و تنظیمات
 TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
 ADMIN_ID = 6618449790
+MONGO_PASSWORD = "Tareq13731376"
+MONGO_URI = f"mongodb+srv://TareqGemBot:{MONGO_PASSWORD}@gemcluster.cjw8jid.mongodb.net/?retryWrites=true&w=majority&appName=Gemcluster"
 
 bot = telebot.TeleBot(TOKEN)
 
+# اتصال به MongoDB (یک بار)
 try:
+    client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
     client.admin.command('ping')
     print("اتصال به MongoDB موفق بود!")
 except Exception as e:
     print(f"خطا در اتصال به MongoDB: {e}")
 
-db = client["GemMlbb"]  # نام دیتابیسی که تو Atlas ساختی
-users_collection = db["users"]  # کالکشنی که میخوای اطلاعات کاربران رو ذخیره کنی
+db = client["GemMlbb"]  # دیتابیس
+users_collection = db["users"]  # کالکشن کاربران
+
+# دیکشنری وضعیت کاربران برای کنترل وضعیت
+user_states = {}
+
+# توابع دیتابیس
 def add_balance(user_id, amount):
     users_collection.update_one(
         {"user_id": user_id},
         {"$inc": {"balance": amount}},
         upsert=True
     )
+
 def get_balance(user_id):
     user = users_collection.find_one({"user_id": user_id})
     if user and "balance" in user:
         return user["balance"]
     return 0
-@bot.message_handler(commands=['balance'])
-def show_balance(message):
-    user_id = message.chat.id
-    balance = get_balance(user_id)
-    bot.send_message(user_id, f"موجودی شما: {balance} تومان")
-    
-from pymongo import MongoClient
-
-client = MongoClient('mongodb://localhost:27017/')
-db = client['botdb']
-users_collection = db['users']
-
-def init_db():
-    users_collection.create_index('user_id', unique=True)
-
-def increase_user_reward(user_id, amount):
-    users_collection.update_one(
-        {'user_id': user_id},
-        {'$inc': {'balance': amount, 'purchase_count': 1}},
-        upsert=True
-    )
-
-def add_or_update_user(user_id, phone):
-    users_collection.update_one(
-        {'user_id': user_id},
-        {'$set': {'phone': phone}},
-        upsert=True
-    )
-
-def get_user_profile(user_id):
-    user = users_collection.find_one({'user_id': user_id})
-    if user:
-        return {
-            'phone': user.get('phone'),
-            'balance': user.get('balance', 0),
-            'purchase_count': user.get('purchase_count', 0)
-        }
-    return None
-
-@bot.message_handler(content_types=['contact'])
-def handle_contact(message):
-    if message.contact and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
-        phone = message.contact.phone_number
-        user_id = message.chat.id
-        add_or_update_user(user_id, phone)
-
-        # ✅ اینجا تعریف admin_msg مشکلی نداره چون داخل تابع هست
-        admin_msg = (
-            f"📞 شماره تماس جدید از کاربر:\n"
-            f"👤 [{message.from_user.first_name}](tg://user?id={user_id})\n"
-            f"🆔 آیدی: `{user_id}`\n"
-            f"📱 شماره: `{phone}`"
-        )
-
-        bot.send_message(ADMIN_ID, admin_msg, parse_mode="Markdown")
-
-client = MongoClient('mongodb://localhost:27017/')  # آدرس و پورت MongoDB خودت
-db = client['botdb']  # نام دیتابیس دلخواه
-users_collection = db['users']  # نام کالکشن دلخواه
 
 def add_or_update_user(user_id, phone):
     users_collection.update_one(
@@ -107,6 +53,38 @@ def get_user_phone(user_id):
     if user:
         return user.get('phone')
     return None
+
+# هندلر دستور /balance
+@bot.message_handler(commands=['balance'])
+def show_balance(message):
+    user_id = message.chat.id
+    balance = get_balance(user_id)
+    bot.send_message(user_id, f"موجودی شما: {balance} تومان")
+
+# هندلر دریافت شماره تماس (contact)
+@bot.message_handler(content_types=['contact'])
+def handle_contact(message):
+    user_id = message.chat.id
+    if message.contact and user_states.get(user_id, {}).get('waiting_for_phone'):
+        phone = message.contact.phone_number
+        add_or_update_user(user_id, phone)
+
+        admin_msg = (
+            f"📞 شماره تماس جدید از کاربر:\n"
+            f"👤 [{message.from_user.first_name}](tg://user?id={user_id})\n"
+            f"🆔 آیدی: `{user_id}`\n"
+            f"📱 شماره: `{phone}`"
+        )
+
+        bot.send_message(ADMIN_ID, admin_msg, parse_mode="Markdown")
+
+        # بعد از گرفتن شماره، وضعیت رو پاک کن
+        user_states[user_id]['waiting_for_phone'] = False
+        bot.send_message(user_id, "شماره شما با موفقیت ثبت شد.")
+
+# اگر user_states استفاده می‌کنی، مطمئن شو که تو کل کد مقداردهی می‌کنی و مدیریت می‌کنی.
+
+# ادامه کد ربات و راه‌اندازی وب‌سرور و غیره
 
 
 bot = telebot.TeleBot(TOKEN)
