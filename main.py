@@ -44,7 +44,16 @@ def get_user_profile(user_id):
         }
     return None
 
-def add_or_update_user(user_id, phone):
+add_or_update_user(user_id, phone)  # ذخیره شماره تو دیتابیس
+
+# ارسال شماره برای ادمین
+admin_msg = (
+    f"📞 شماره تماس جدید از کاربر:\n"
+    f"👤 [{message.from_user.first_name}](tg://user?id={user_id})\n"
+    f"🆔 آیدی: `{user_id}`\n"
+    f"📱 شماره: `{phone}`"
+)
+bot.send_message(ADMIN_ID, admin_msg, parse_mode="Markdown")
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
     c.execute('''
@@ -241,7 +250,7 @@ def show_package_detail(message):
         pkg = gem_packages[message.text]
     else:
         pkg = special_event_packages[message.text]
-
+user_states[message.chat.id] = {'selected_package': message.text}
     text = format_package_text(message.text)
 
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
