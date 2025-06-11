@@ -297,15 +297,15 @@ def handle_buy(message):
         user_states[message.chat.id]['waiting_for_phone'] = True
     else:
         user_states[message.chat.id] = {'waiting_for_phone': True}
+        
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
-    if message.contact is not None and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
+    if message.contact and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
         phone = message.contact.phone_number
         user_id = message.chat.id
-        add_or_update_user(user_id, phone)  # ذخیره شماره تو دیتابیس
-# اطلاع به ادمین
-bot.send_message(ADMIN_ID, f"📞 شماره تماس جدید از {message.from_user.first_name}:\n`{phone}`", parse_mode="Markdown")
-        # بعد از ذخیره شماره، شماره کارت رو ارسال کن
+        add_or_update_user(user_id, phone)
+
+        bot.send_message(ADMIN_ID, f"📞 شماره تماس جدید از {message.from_user.first_name}:\n`{phone}`", parse_mode="Markdown")
         card_number = "6219861818197880"
         caption = (
             "تنها شماره کارت مجموعه موبایل لجندز آی‌آر\n\n"
@@ -314,6 +314,8 @@ bot.send_message(ADMIN_ID, f"📞 شماره تماس جدید از {message.fro
             "✅ بعد از واریز، عکس رسید + آیدی اکانت و آیدی سرور رو همینجا به صورت متن کنار عکس بفرستید."
         )
         bot.send_message(user_id, caption, parse_mode="HTML", reply_markup=main_menu())
+
+        user_states.pop(user_id)
         
         user_states.pop(user_id)  # حذف وضعیت انتظار
 
