@@ -115,7 +115,8 @@ def send_welcome(message):
 @bot.message_handler(func=lambda m: m.text == "💎 خرید جم موبایل لجندز")
 def show_packages(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    pkgs = list(special_event_packages.keys()) + list(gem_packages.keys())
+    markup.row("🔥 بسته‌های ویژه ایونت")  # دکمه بسته ویژه
+    pkgs = list(gem_packages.keys())
     for i in range(0, len(pkgs), 2):
         if i + 1 < len(pkgs):
             markup.row(pkgs[i], pkgs[i + 1])
@@ -123,6 +124,13 @@ def show_packages(message):
             markup.row(pkgs[i])
     markup.row("بازگشت به منو")
     bot.send_message(message.chat.id, "📦 یکی از بسته‌های جم رو انتخاب کن:", reply_markup=markup)
+@bot.message_handler(func=lambda m: m.text == "🔥 بسته‌های ویژه ایونت")
+def show_special_event_packages(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    for key in special_event_packages.keys():
+        markup.row(key)
+    markup.row("🔙 بازگشت به لیست بسته‌ها")
+    bot.send_message(message.chat.id, "🔥 بسته‌های ویژه ایونت:", reply_markup=markup)
 
 @bot.message_handler(func=lambda m: m.text in gem_packages or m.text in special_event_packages)
 def show_package_detail(message):
@@ -130,10 +138,9 @@ def show_package_detail(message):
         pkg = gem_packages[message.text]
     else:
         pkg = special_event_packages[message.text]
-    
+
     text = f"🎁 <b>{message.text}</b>\n💰 قیمت: {pkg['price']}\nℹ️ {pkg['desc']}"
-    
-    # دکمه‌ها
+
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("🛒 خرید")
     markup.row("🔙 بازگشت به لیست بسته‌ها")
