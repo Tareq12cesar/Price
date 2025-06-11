@@ -1,9 +1,21 @@
+import telebot
+from telebot import types
+from flask import Flask, request
+import threading
+import sqlite3  # اضافه کن اینجا
+
+
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
 password = "Tareq13731376"
 uri = f"mongodb+srv://TareqGemBot:{password}@gemcluster.cjw8jid.mongodb.net/?retryWrites=true&w=majority&appName=Gemcluster"
 client = MongoClient(uri, server_api=ServerApi('1'))
+
+TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
+ADMIN_ID = 6618449790
+
+bot = telebot.TeleBot(TOKEN)
 
 try:
     client.admin.command('ping')
@@ -30,12 +42,6 @@ def show_balance(message):
     balance = get_balance(user_id)
     bot.send_message(user_id, f"موجودی شما: {balance} تومان")
     
-import telebot
-from telebot import types
-from flask import Flask, request
-import threading
-import sqlite3  # اضافه کن اینجا
-
 # توابع دیتابیس
 def init_db():
     conn = sqlite3.connect('users.db')
@@ -84,11 +90,6 @@ def get_user_profile(user_id):
             'purchase_count': row[2]
         }
     return None
-
-TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
-ADMIN_ID = 6618449790
-
-bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
