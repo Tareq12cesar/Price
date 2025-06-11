@@ -56,6 +56,8 @@ def get_user_profile(user_id):
 TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
 ADMIN_ID = 6618449790
 
+bot = telebot.TeleBot(TOKEN)
+
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     if message.contact and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
