@@ -59,24 +59,23 @@ def handle_contact(message):
 
         bot.send_message(ADMIN_ID, admin_msg, parse_mode="Markdown")
 
+from pymongo import MongoClient
+
+client = MongoClient('mongodb://localhost:27017/')  # آدرس و پورت MongoDB خودت
+db = client['botdb']  # نام دیتابیس دلخواه
+users_collection = db['users']  # نام کالکشن دلخواه
+
 def add_or_update_user(user_id, phone):
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    c.execute('''
-        INSERT INTO users (user_id, phone) VALUES (?, ?)
-        ON CONFLICT(user_id) DO UPDATE SET phone=excluded.phone
-    ''', (user_id, phone))
-    conn.commit()
-    conn.close()
+    users_collection.update_one(
+        {'user_id': user_id},
+        {'$set': {'phone': phone}},
+        upsert=True
+    )
 
 def get_user_phone(user_id):
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    c.execute('SELECT phone FROM users WHERE user_id=?', (user_id,))
-    row = c.fetchone()
-    conn.close()
-    if row:
-        return row[0]
+    user = users_collection.find_one({'user_id': user_id})
+    if user:
+        return user.get('phone')
     return None
 
 
