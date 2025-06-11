@@ -53,7 +53,12 @@ def get_user_profile(user_id):
         }
     return None
 
-add_or_update_user(user_id, phone)  # ذخیره شماره تو دیتابیس
+@bot.message_handler(content_types=['contact'])
+def handle_contact(message):
+    if message.contact and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
+        user_id = message.chat.id
+        phone = message.contact.phone_number
+        add_or_update_user(user_id, phone)
 
 # ارسال شماره برای ادمین
 admin_msg = (
