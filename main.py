@@ -75,14 +75,15 @@ def handle_contact(message):
 
         bot.send_message(ADMIN_ID, admin_msg, parse_mode="Markdown")
 
-conn = sqlite3.connect('users.db')
-c = conn.cursor()
-c.execute('''
-    INSERT INTO users (user_id, phone) VALUES (?, ?)
-    ON CONFLICT(user_id) DO UPDATE SET phone=excluded.phone
-''', (user_id, phone))
-conn.commit()
-conn.close()
+def add_or_update_user(user_id, phone):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO users (user_id, phone) VALUES (?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET phone=excluded.phone
+    ''', (user_id, phone))
+    conn.commit()
+    conn.close()
 
 def get_user_phone(user_id):
     conn = sqlite3.connect('users.db')
