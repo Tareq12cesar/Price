@@ -41,6 +41,38 @@ def show_balance(message):
     balance = get_balance(user_id)
     bot.send_message(user_id, f"موجودی شما: {balance} تومان")
     
+from pymongo import MongoClient
+
+client = MongoClient('mongodb://localhost:27017/')
+db = client['botdb']
+users_collection = db['users']
+
+def init_db():
+    users_collection.create_index('user_id', unique=True)
+
+def increase_user_reward(user_id, amount):
+    users_collection.update_one(
+        {'user_id': user_id},
+        {'$inc': {'balance': amount, 'purchase_count': 1}},
+        upsert=True
+    )
+
+def add_or_update_user(user_id, phone):
+    users_collection.update_one(
+        {'user_id': user_id},
+        {'$set': {'phone': phone}},
+        upsert=True
+    )
+
+def get_user_profile(user_id):
+    user = users_collection.find_one({'user_id': user_id})
+    if user:
+        return {
+            'phone': user.get('phone'),
+            'balance': user.get('balance', 0),
+            'purchase_count': user.get('purchase_count', 0)
+        }
+    return None
 
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
@@ -58,8 +90,6 @@ def handle_contact(message):
         )
 
         bot.send_message(ADMIN_ID, admin_msg, parse_mode="Markdown")
-
-from pymongo import MongoClient
 
 client = MongoClient('mongodb://localhost:27017/')  # آدرس و پورت MongoDB خودت
 db = client['botdb']  # نام دیتابیس دلخواه
