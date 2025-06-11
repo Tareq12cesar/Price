@@ -4,15 +4,39 @@ from flask import Flask, request
 import threading
 import sqlite3  # اضافه کن اینجا
 
-# اینجا توابع دیتابیس رو اضافه کن:
+# توابع دیتابیس
 def init_db():
-    ...
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            phone TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 def add_or_update_user(user_id, phone):
-    ...
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO users (user_id, phone) VALUES (?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET phone=excluded.phone
+    ''', (user_id, phone))
+    conn.commit()
+    conn.close()
 
 def get_user_phone(user_id):
-    ...
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('SELECT phone FROM users WHERE user_id=?', (user_id,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        return row[0]
+    return None
+
 TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
 ADMIN_ID = 6618449790
 
