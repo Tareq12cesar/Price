@@ -9,6 +9,25 @@ ADMIN_ID = 6618449790
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
+special_event_packages = {
+    "پک هفتگی": {
+        "price": "120,000 تومان",
+        "desc": "پک هفتگی 100 ریشارژ حساب میشه و هر پک هفتگی وقتی می‌خرید 80 جم میده و روزانه 20 جم و 10 تا کریستال ارورا میده و حداکثر تا 10 تا می‌تونید همزمان خریداری کنید"
+    },
+    "279 جم (ایونت ویژه)": {
+        "price": "309,000 تومان",
+        "desc": "این بسته شامل 254 جم ریشارژ + 25 جم بونوس"
+    },
+    "2 پک هفتگی + 56 جم": {
+        "price": "314,000 تومان",
+        "desc": "این بسته 251 جم ریشارژ + 5 جم بونوس و در مجموع بعد دو هفته 440 جم از دو پک هفتگی + 56 جم که در مجموع 496 جم بهتون میده"
+    },
+    "3 پک هفتگی": {
+        "price": "359,000 تومان",
+        "desc": "این بسته شامل 300 جم ریشارژ و بعد 3 هفته در مجموع 660 جم میده بهتون"
+    },
+}
+
 gem_packages = {
     "11 جم": {
         "price": "17,000 تومان",
@@ -96,7 +115,7 @@ def send_welcome(message):
 @bot.message_handler(func=lambda m: m.text == "💎 خرید جم موبایل لجندز")
 def show_packages(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    pkgs = list(gem_packages.keys())
+    pkgs = list(special_event_packages.keys()) + list(gem_packages.keys())
     for i in range(0, len(pkgs), 2):
         if i + 1 < len(pkgs):
             markup.row(pkgs[i], pkgs[i + 1])
@@ -105,9 +124,13 @@ def show_packages(message):
     markup.row("بازگشت به منو")
     bot.send_message(message.chat.id, "📦 یکی از بسته‌های جم رو انتخاب کن:", reply_markup=markup)
 
-@bot.message_handler(func=lambda m: m.text in gem_packages)
+@bot.message_handler(func=lambda m: m.text in gem_packages or m.text in special_event_packages)
 def show_package_detail(message):
-    pkg = gem_packages[message.text]
+    if message.text in gem_packages:
+        pkg = gem_packages[message.text]
+    else:
+        pkg = special_event_packages[message.text]
+    
     text = f"🎁 <b>{message.text}</b>\n💰 قیمت: {pkg['price']}\nℹ️ {pkg['desc']}"
     
     # دکمه‌ها
@@ -117,12 +140,13 @@ def show_package_detail(message):
     markup.row("بازگشت به منو")
 
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
 @bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
 @bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
 def back_to_package_list(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    pkgs = list(gem_packages.keys())
-    # ساختن دکمه‌ها دو تا دو تا کنار هم
+    pkgs = list(special_event_packages.keys()) + list(gem_packages.keys())
     for i in range(0, len(pkgs), 2):
         if i+1 < len(pkgs):
             markup.row(pkgs[i], pkgs[i+1])
