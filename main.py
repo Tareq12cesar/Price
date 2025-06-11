@@ -250,17 +250,15 @@ def show_package_detail(message):
         pkg = gem_packages[message.text]
     else:
         pkg = special_event_packages[message.text]
-user_states[message.chat.id] = {'selected_package': message.text}
+
+    user_states[message.chat.id] = {'selected_package': message.text}
     text = format_package_text(message.text)
 
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("🛒 خرید")
     markup.row("🔙 بازگشت به لیست بسته‌ها")
     markup.row("بازگشت به منو")
-
-    # ذخیره بسته انتخاب شده برای استفاده بعدی
     user_states[message.chat.id] = {'selected_package': message.text}
-
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: m.text == "🔙 بازگشت به لیست بسته‌ها")
