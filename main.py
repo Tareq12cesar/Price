@@ -53,6 +53,9 @@ def get_user_profile(user_id):
         }
     return None
 
+TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
+ADMIN_ID = 6618449790
+
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     if message.contact and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
@@ -87,8 +90,6 @@ def get_user_phone(user_id):
         return row[0]
     return None
 
-TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
-ADMIN_ID = 6618449790
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
