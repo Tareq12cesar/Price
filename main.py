@@ -95,7 +95,7 @@ user_states = {}
 
 def main_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row("💎 خرید جم موبایل لجندز")
+    markup.row("💎 خرید جم موبایل لجندز", "👤 حساب کاربری")  # دکمه‌ها در یک ردیف
     return markup
 
 @app.route('/', methods=['GET'])
