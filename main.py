@@ -61,18 +61,20 @@ bot = telebot.TeleBot(TOKEN)
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     if message.contact and user_states.get(message.chat.id, {}).get('waiting_for_phone'):
-        user_id = message.chat.id
         phone = message.contact.phone_number
+        user_id = message.chat.id
         add_or_update_user(user_id, phone)
 
-# ارسال شماره برای ادمین
-admin_msg = (
-    f"📞 شماره تماس جدید از کاربر:\n"
-    f"👤 [{message.from_user.first_name}](tg://user?id={user_id})\n"
-    f"🆔 آیدی: `{user_id}`\n"
-    f"📱 شماره: `{phone}`"
-)
-bot.send_message(ADMIN_ID, admin_msg, parse_mode="Markdown")
+        # ✅ اینجا تعریف admin_msg مشکلی نداره چون داخل تابع هست
+        admin_msg = (
+            f"📞 شماره تماس جدید از کاربر:\n"
+            f"👤 [{message.from_user.first_name}](tg://user?id={user_id})\n"
+            f"🆔 آیدی: `{user_id}`\n"
+            f"📱 شماره: `{phone}`"
+        )
+
+        bot.send_message(ADMIN_ID, admin_msg, parse_mode="Markdown")
+
 conn = sqlite3.connect('users.db')
 c = conn.cursor()
 c.execute('''
