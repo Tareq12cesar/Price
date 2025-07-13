@@ -53,7 +53,7 @@ def get_user_profile(user_id):
         }
     return None
 
-TOKEN = '7933020801:AAG2jwlFORScA2GAMr7b_aVdfeZH2KRBMWU'
+TOKEN = '7933020801:AAGcuZC_d8DzL2ES3YsWNziR9I4kgjH1MnQ'
 ADMIN_ID = 6618449790
 
 bot = telebot.TeleBot(TOKEN)
